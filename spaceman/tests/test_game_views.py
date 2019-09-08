@@ -20,6 +20,10 @@ class GameApiViewTests( TestCase ):
             'id': None
         }
 
+        self.expected_solution = {
+            'solution': "TESTWORD"
+        }
+
         self.mock_game = Game(
                 word = "TESTWORD",
                 guesses_allowed = self.expected_game_data['guesses_allowed'],
@@ -72,4 +76,16 @@ class GameApiViewTests( TestCase ):
     # TODO: Add tests for Getting a game's solution
     # HINT: remember the `setUp` fixture that is in this test class, 
     #   it constructs things that might be useful
-
+    def test_game_solution_should_return_404_for_non_existent_game( self ):
+        with patch.object( Game.objects, 'get' ) as mock_get:
+            mock_get.side_effect = Game.DoesNotExist
+            response = game_solution( self.mock_get_request, 1)
+            self.assertEqual( response.status_code, 404 )
+    
+    def test_game_solution_responds_with_json_if_exists( self ):
+        with patch.object( Game.objects, 'get') as mock_get:
+            mock_get.return_value = self.mock_game
+            response = game_solution( self.mock_get_request, 1 )
+            mock_get.assert_called_with( pk=1 )
+            self.assertEqual( response.status_code, 200 )
+            self.assertDictEqual( response.data, self.expected_solution )
